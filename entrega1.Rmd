@@ -1,0 +1,137 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+1. LIMPIEZA TABLA VARIABLE DEPENDIENTE
+
+La variable dependiente es el porcentaje de los jóvenes en "edad oficial escolar secundaria" que se encuentran matriculados en este nivel educativo
+
+Se ha importado la base de datos con la opcion "Import Dataset" en Environment
+Veo la estructura de la data y los nombres de las columnas
+```{r}
+str(school_enrollment)
+names(school_enrollment)
+```
+Cambio los nombres de las variables a unas más sencillas
+```{r}
+names(school_enrollment) = c("Pais", "Porcentaje de jovenes matriculados")
+
+```
+
+Mi columna numérica (la del porcentaje) tiene muchos decimales; lo redondeo a solamente dos
+```{r}
+school_enrollment$`Porcentaje de jovenes matriculados` = round(school_enrollment$`Porcentaje de jovenes matriculados`, 2)
+```
+
+Existen algunos N.A que no me interesa conservar; los elimino
+```{r}
+inscripcionsecundaria = na.omit(school_enrollment)
+```
+
+Exporto la data limpia
+```{r}
+export(inscripcionsecundaria, "inscripcionsecundaria.xlsx")
+```
+
+
+2. PRIMERA VARIABLE INDEPENDIENTE : PBI PER CAPITA
+
+Traigo la data que se encuentra en mi github
+Primero descargo la libreria rio para poder realizar la funcion importar
+```{r}
+install.packages("rio")
+library(rio)
+linkGDP = "https://github.com/marianareinosov/trabajo-final-est/raw/master/Results.csv"
+dataGDP=import(linkGDP)
+```
+
+Veo los nombres de mis columnas y luego los cambio
+```{r}
+names(dataGDP)
+names(dataGDP) = c("Pais","Año","unidad","Ingreso per capita (en dolares)")
+```
+
+Elimino la columna de "unidad" y "año" ya que no las necesito
+```{r}
+dataGDP$unidad = NULL
+dataGDP$Año = NULL
+```
+
+Redondeo mi tercera columna a 2 decimales
+```{r}
+dataGDP$`Ingreso per capita (en dolares)` = round(dataGDP$`Ingreso per capita (en dolares)`, 2)
+```
+
+Exporto la data limpia
+```{r}
+export(dataGDP, "dataGDP.xlsx")
+```
+
+
+3. SEGUNDA VARIABLE INDEPENDIENTE: PORCENTAJE DE POBLACION VIVIENDO BAJO LA LINEA DE POBREZA NACIONAL
+
+Scrappeo la tabla de la página web
+```{r}
+linkpobreza = "https://www.cia.gov/library/publications/resources/the-world-factbook/fields/221.html"
+linkpathpobreza = '//*[@id="fieldListing"]'
+```
+
+Traigo la data al R. Necesito descargar la libreria htmltab
+```{r}
+install.packages("htmltab")
+library(htmltab)
+Pobreza = htmltab(doc = linkpobreza, 
+              which =linkpathpobreza)
+```
+
+Cambio los nombres de mis columnas
+```{r}
+names(Pobreza) = c("Pais", "Poblacion bajo la linea de pobreza nacional (porcentaje)")
+names(Pobreza)
+```
+Para limpiar la base de datos, solo extraigo el número de la columna "Poblacion bajo la linea de pobreza nacional (porcentaje)". 
+Utilizo la función parse number, para la cual descargo primero la libreria readr
+```{r}
+install.packages("readr")
+library(readr)
+Pobreza$`Poblacion bajo la linea de pobreza nacional (porcentaje)` = parse_number(Pobreza$`Poblacion bajo la linea de pobreza nacional (porcentaje)`)
+
+```
+Elimino los N.A
+```{r}
+Pobreza = na.omit(Pobreza)
+
+```
+
+Exporto la data limpia
+```{r}
+export(Pobreza, "Pobreza.xlsx")
+```
+
+
+4. JUNTO EN UNA TABLA MI VARIABLE DEPENDIENTE CON LAS OTRAS DOS INDEPENDIENTES
+
+Primero empiezo juntando mis dos variables independientes
+Para esto utilizo la funcion merge
+```{r}
+dataeconomia=merge(dataGDP,Pobreza,all.x=T,all.y=T)
+```
+
+Ahora junto esta nueva tabla con la de mi variable dependiente
+```{r}
+datafinal=merge(inscripcionsecundaria,dataeconomia,all.x=T,all.y=F)
+
+```
+
+Exporto la data
+```{r}
+export(datafinal,"datafinal.xlsx")
+```
+
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
